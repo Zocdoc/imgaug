@@ -465,14 +465,29 @@ class Affine(Augmenter):
                 )
                 matrix_to_center = tf.SimilarityTransform(translation=[shift_x, shift_y])
                 matrix = (matrix_to_topleft + matrix_transforms + matrix_to_center)
-                image_warped = tf.warp(
-                    images[i],
-                    matrix.inverse,
-                    order=order,
-                    mode=mode,
-                    cval=cval,
-                    preserve_range=True
-                )
+                if order in (0, 1, 3):
+                    cv_mode = dict(
+                        constant=cv2.BORDER_CONSTANT, edge=cv2.BORDER_REPLICATE,
+                        symmetric=cv2.BORDER_REFLECT_101, wrap=cv2.BORDER_WRAP,
+                        reflect=cv2.BORDER_REFLECT)[mode]
+                    cv_interp = {0: cv2.INTER_NEAREST, 1: cv2.INTER_LINEAR, 3: cv2.INTER_CUBIC}[order]
+
+                    image_warped = cv2.warpAffine(
+                        images[i],
+                        matrix.params[:2],
+                        flags=cv_interp,
+                        borderMode=cv_mode,
+                        borderValue=cval,
+                        dsize=images[i].shape[:2])
+                else:
+                    image_warped = tf.warp(
+                        images[i],
+                        matrix.inverse,
+                        order=order,
+                        mode=mode,
+                        cval=cval,
+                        preserve_range=True
+                    )
                 # warp changes uint8 to float64, making this necessary
                 if image_warped.dtype != images[i].dtype:
                     image_warped = image_warped.astype(images[i].dtype, copy=False)
