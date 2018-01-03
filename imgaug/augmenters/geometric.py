@@ -477,7 +477,7 @@ class Affine(Augmenter):
                         matrix.params[:2],
                         flags=cv_interp,
                         borderMode=cv_mode,
-                        borderValue=cval, #what issues does this cause? 
+                        borderValue=int(cval), #what issues does this cause? 
                         dsize=(images[i].shape[1], images[i].shape[0] ))
                 else:
                     image_warped = tf.warp(
